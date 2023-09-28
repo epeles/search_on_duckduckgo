@@ -9,7 +9,7 @@ from selenium.common.exceptions import TimeoutException
 import duckduckgo.constants as const
 
 class Duckduckgo(webdriver.Chrome):
-    def __init__(self,driver_path=r"/Users/eitanpeles/Documents/chromedriver"):
+    def __init__(self,driver_path=r"/<PATH TO YOUR CHROMEDRIVE>"):
         self.driver_path = driver_path
         os.environ['PATH'] += self.driver_path
         options = webdriver.ChromeOptions()
