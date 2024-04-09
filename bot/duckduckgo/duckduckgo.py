@@ -1,4 +1,3 @@
-import os
 import sys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -7,14 +6,18 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException 
 import duckduckgo.constants as const
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+
 
 class Duckduckgo(webdriver.Chrome):
-    def __init__(self,driver_path=r"/<PATH TO YOUR CHROMEDRIVE>"):
-        self.driver_path = driver_path
-        os.environ['PATH'] += self.driver_path
+    def __init__(self):
         options = webdriver.ChromeOptions()
         options.add_argument("--headless=new")
-        super(Duckduckgo, self).__init__(options=options)
+        driver_path = ChromeDriverManager().install()
+        service = ChromeService(executable_path=driver_path)
+        super(Duckduckgo, self).__init__(service=service, options=options)
 
     def land_main_page(self):
         self.get(const.BASE_URL)
@@ -43,12 +46,10 @@ class Duckduckgo(webdriver.Chrome):
         
         results = self.find_elements(By.CSS_SELECTOR, "a[data-testid='result-title-a']")
         urls = self.find_elements(By.CSS_SELECTOR,'a[data-testid="result-extras-url-link"]')
-
         combined = list(zip(results, urls))
         for i, (result, url) in enumerate(combined, start=1):
             print(f"{i}. {result.text}, URL: {url.get_attribute('href')}")
         print(f"Total pages: {pages}")
 
-    
     def quit_test(self):
         self.quit
