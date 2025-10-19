@@ -109,15 +109,18 @@ class DuckDuckGoSearcher(webdriver.Chrome):
         search_box.send_keys(Keys.RETURN)       
        
         # Wait for results
+        # Note: DuckDuckGo may block headless browsers, use --no-headless if needed
         wait = WebDriverWait(self, self.timeout)
         try:
+            # Updated selector - DuckDuckGo changed their HTML structure
             wait.until(
                 EC.presence_of_all_elements_located(
-                    (By.CSS_SELECTOR, "a[data-testid='result-title-a']")
+                    (By.CSS_SELECTOR, "h2 a")
                 )
             )
         except TimeoutException:
-            logger.warning("No search results found or page took too long to load")
+            logger.warning("No search results found or page took too long to load. "
+                          "Try using --no-headless flag if using headless mode.")
             return []
         
         # Load additional pages
@@ -169,23 +172,28 @@ class DuckDuckGoSearcher(webdriver.Chrome):
         Returns:
             A list of SearchResult objects.
         """
-        result_elements = self.find_elements(
-            By.CSS_SELECTOR, "a[data-testid='result-title-a']"
-        )
-        url_elements = self.find_elements(
-            By.CSS_SELECTOR, 'a[data-testid="result-extras-url-link"]'
-        )
+        # Updated selector: DuckDuckGo now uses h2 a for result titles
+        # The href attribute contains the actual URL
+        result_links = self.find_elements(By.CSS_SELECTOR, "h2 a")
         
-        if not result_elements:
+        if not result_links:
             logger.warning("No results found on the page")
             return []
         
         results = []
-        for i, (result, url) in enumerate(zip(result_elements, url_elements), start=1):
+        for i, link in enumerate(result_links, start=1):
             try:
+                title = link.text
+                url = link.get_attribute('href')
+                
+                # Skip if title or URL is empty
+                if not title or not url:
+                    logger.debug(f"Skipping result {i}: empty title or URL")
+                    continue
+                
                 results.append(SearchResult(
-                    title=result.text,
-                    url=url.get_attribute('href'),
+                    title=title,
+                    url=url,
                     position=i
                 ))
             except Exception as e:
